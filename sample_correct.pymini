@@ -1,0 +1,18 @@
+x = 5
+print(x)
+
+y = 10
+if x < y:
+    x = y
+
+a = 1
+b = 2
+c = a + b
+print(c)
+
+flag = True
+if flag:
+    result = "yes"
+else:
+    result = "no"
+print(result)
