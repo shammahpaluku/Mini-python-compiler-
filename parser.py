@@ -522,11 +522,10 @@ class Parser:
         print(f"Error recoveries: {errors}")
     
     def print_parse_tree(self):
-        """Print the parse tree if parsing was successful."""
         if self.parse_tree_root:
             self.parse_tree_root.print_tree()
         else:
-            print("No parse tree available (parsing failed or not completed)")
+            print("No parse tree available")
 
 
 # Utility functions for creating parser
