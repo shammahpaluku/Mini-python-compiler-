@@ -49,6 +49,25 @@ class ParseTreeNode:
             child_id = id(child)
             file.write(f"{node_id} -> {child_id};\n")
             child.to_dot(file)
+    
+    def print_horizontal(self):
+        """Print tree in traditional horizontal format with / and \ branches."""
+        self._print_horizontal_recursive(0, "")
+    
+    def _print_horizontal_recursive(self, depth, prefix):
+        """Recursively print tree in horizontal format."""
+        cleaned_symbol = ParseTreeNode.clean_symbol(self.symbol)
+        label = f"{cleaned_symbol}: {self.token}" if self.token else cleaned_symbol
+        
+        # Print this node
+        print(prefix + label)
+        
+        # Print children
+        if self.children:
+            for i, child in enumerate(self.children):
+                is_last = (i == len(self.children) - 1)
+                new_prefix = prefix + ("  " if is_last else "│ ")
+                child._print_horizontal_recursive(depth + 1, new_prefix)
 
 # Error handling classes
 class ParseError(Exception):
@@ -563,6 +582,13 @@ class Parser:
             self.parse_tree_root.to_dot(f)
             f.write("}\n")
         print(f"Parse tree exported to {filename}")
+    
+    def print_parse_tree_horizontal(self):
+        """Print parse tree in horizontal format with ASCII branches."""
+        if self.parse_tree_root:
+            self.parse_tree_root.print_horizontal()
+        else:
+            print("No parse tree available")
 
 
 # Utility functions for creating parser
