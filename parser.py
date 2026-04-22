@@ -542,14 +542,14 @@ class Parser:
         print("="*100)
         
         # Header
-        print(f"{'Step':<6} {'Stack':<30} {'Input Token':<15} {'Action':<40}")
+        print(f"{'Step':<6} {'Stack':<40} {'Input Token':<15} {'Action':<40}")
         print("-" * 100)
         
         for i, step in enumerate(self.parsing_steps):
             # Format stack (show top at right)
             stack_str = " ".join(step['stack'])
-            if len(stack_str) > 28:
-                stack_str = stack_str[-28:]  # Show last 28 chars
+            if len(stack_str) > 38:
+                stack_str = stack_str[:38]  # Show first 38 chars (top of stack)
             
             # Format action
             action = step['action']
@@ -557,7 +557,7 @@ class Parser:
                 prod_str = " ".join(step['production'])
                 action += f" ({prod_str})"
             
-            print(f"{i:<6} {stack_str:<30} {step['token']:<15} {action:<40}")
+            print(f"{i:<6} {stack_str:<40} {step['token']:<15} {action:<40}")
         
         print("="*100)
     
