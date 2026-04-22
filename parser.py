@@ -16,15 +16,20 @@ class ParseTreeNode:
         self.children = children or []
         self.token = token          # actual token value for terminals e.g. "x", "5", "if"
     
-    def pretty_print(self, indent=0):
-        """Print the parse tree with proper indentation."""
-        prefix = "  " * indent
+    def print_tree(self, prefix="", is_last=True):
+        """Print the parse tree with ASCII art connectors."""
+        connector = "└── " if is_last else "├── "
+        
         if self.token:
-            print(f"{prefix}{self.symbol}: {self.token}")
+            print(prefix + connector + f"{self.symbol}: {self.token}")
         else:
-            print(f"{prefix}{self.symbol}")
-        for child in self.children:
-            child.pretty_print(indent + 1)
+            print(prefix + connector + self.symbol)
+
+        new_prefix = prefix + ("    " if is_last else "│   ")
+
+        for i, child in enumerate(self.children):
+            is_last_child = (i == len(self.children) - 1)
+            child.print_tree(new_prefix, is_last_child)
 
 # Error handling classes
 class ParseError(Exception):
@@ -519,7 +524,7 @@ class Parser:
     def print_parse_tree(self):
         """Print the parse tree if parsing was successful."""
         if self.parse_tree_root:
-            self.parse_tree_root.pretty_print()
+            self.parse_tree_root.print_tree()
         else:
             print("No parse tree available (parsing failed or not completed)")
 
