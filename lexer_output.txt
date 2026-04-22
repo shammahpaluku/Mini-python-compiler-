@@ -1,0 +1,108 @@
+=====
+Run at: 2026-04-22 21:13:07.262901
+====================================================================
+  PyMini Mini-Compiler  -  Lexical Analyser (DFA)
+  Group 14
+====================================================================
+  Source : sample_correct.pymini
+  Method : Hand-coded DFA (explicit state transitions, no regex)
+  Source program:
+  --------------------------------------------------------------
+  x = 5
+  print(x)
+  
+  y = 10
+  if x < y:
+      x = y
+  
+  a = 1
+  b = 2
+  c = a + b
+  print(c)
+  
+  flag = True
+  if flag:
+      result = "yes"
+  else:
+      result = "no"
+  print(result)
+  --------------------------------------------------------------
+  Token stream:
+==================================================================
+    #  TOKEN TYPE      LEXEME              LINE   COL
+==================================================================
+    1  IDENTIFIER     'x'                    1     1
+    2  OPERATOR       '='                    1     3
+    3  NUMBER         '5'                    1     5
+    4  KEYWORD        'print'                2     1
+    5  DELIMITER      '('                    2     6
+    6  IDENTIFIER     'x'                    2     7
+    7  DELIMITER      ')'                    2     8
+    8  IDENTIFIER     'y'                    4     1
+    9  OPERATOR       '='                    4     3
+   10  NUMBER         '10'                   4     5
+   11  KEYWORD        'if'                   5     1
+   12  IDENTIFIER     'x'                    5     4
+   13  OPERATOR       '<'                    5     6
+   14  IDENTIFIER     'y'                    5     8
+   15  DELIMITER      ':'                    5     9
+   16  INDENT         'INDENT'               6     1
+   17  IDENTIFIER     'x'                    6     5
+   18  OPERATOR       '='                    6     7
+   19  IDENTIFIER     'y'                    6     9
+   20  DEDENT         'DEDENT'               7     1
+   21  IDENTIFIER     'a'                    8     1
+   22  OPERATOR       '='                    8     3
+   23  NUMBER         '1'                    8     5
+   24  IDENTIFIER     'b'                    9     1
+   25  OPERATOR       '='                    9     3
+   26  NUMBER         '2'                    9     5
+   27  IDENTIFIER     'c'                   10     1
+   28  OPERATOR       '='                   10     3
+   29  IDENTIFIER     'a'                   10     5
+   30  OPERATOR       '+'                   10     7
+   31  IDENTIFIER     'b'                   10     9
+   32  KEYWORD        'print'               11     1
+   33  DELIMITER      '('                   11     6
+   34  IDENTIFIER     'c'                   11     7
+   35  DELIMITER      ')'                   11     8
+   36  IDENTIFIER     'flag'                13     1
+   37  OPERATOR       '='                   13     6
+   38  BOOLEAN        'True'                13     8
+   39  KEYWORD        'if'                  14     1
+   40  IDENTIFIER     'flag'                14     4
+   41  DELIMITER      ':'                   14     8
+   42  INDENT         'INDENT'              15     1
+   43  IDENTIFIER     'result'              15     5
+   44  OPERATOR       '='                   15    12
+   45  STRING         '"yes"'               15    14
+   46  DEDENT         'DEDENT'              16     1
+   47  KEYWORD        'else'                16     1
+   48  DELIMITER      ':'                   16     5
+   49  INDENT         'INDENT'              17     1
+   50  IDENTIFIER     'result'              17     5
+   51  OPERATOR       '='                   17    12
+   52  STRING         '"no"'                17    14
+   53  DEDENT         'DEDENT'              18     1
+   54  KEYWORD        'print'               18     1
+   55  DELIMITER      '('                   18     6
+   56  IDENTIFIER     'result'              18     7
+   57  DELIMITER      ')'                   18    13
+==================================================================
+  Total tokens: 57
+==================================================================
+  Token-type summary:
+  Type            Count
+  ----------------------
+  BOOLEAN             1
+  DELIMITER           9
+  IDENTIFIER         18
+  KEYWORD             6
+  NUMBER              4
+  OPERATOR           11
+  STRING              2
+  INDENT              3
+  DEDENT              3
+  ----------------------
+  TOTAL              57
+

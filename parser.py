@@ -181,6 +181,7 @@ PARSE_TABLE: Dict[str, Dict[str, List[str]]] = {
         "IDENTIFIER": ["<statement>", "<statement_list>"],
         "else":       ["ε"],
         ")":          ["ε"],
+        "DEDENT":     ["ε"],
         "$":          ["ε"],
     },
 
@@ -196,11 +197,11 @@ PARSE_TABLE: Dict[str, Dict[str, List[str]]] = {
     },
 
     "<if_statement>": {
-        "if": ["if", "<expression>", ":", "<statement_list>", "<else_clause>"],
+        "if": ["if", "<expression>", ":", "INDENT", "<statement_list>", "DEDENT", "<else_clause>"],
     },
 
     "<else_clause>": {
-        "else": ["else", ":", "<statement_list>"],
+        "else": ["else", ":", "INDENT", "<statement_list>", "DEDENT"],
         "if":   ["ε"],
         "while":["ε"],
         "print":["ε"],
@@ -210,7 +211,7 @@ PARSE_TABLE: Dict[str, Dict[str, List[str]]] = {
     },
 
     "<while_statement>": {
-        "while": ["while", "<expression>", ":", "<statement_list>"],
+        "while": ["while", "<expression>", ":", "INDENT", "<statement_list>", "DEDENT"],
     },
 
     "<print_statement>": {
@@ -240,6 +241,7 @@ PARSE_TABLE: Dict[str, Dict[str, List[str]]] = {
         "while":["ε"],
         "print":["ε"],
         "IDENTIFIER": ["ε"],
+        "DEDENT": ["ε"],
         "$":   ["ε"],
     },
 
@@ -260,6 +262,7 @@ PARSE_TABLE: Dict[str, Dict[str, List[str]]] = {
         "while":["ε"],
         "print":["ε"],
         "IDENTIFIER": ["ε"],
+        "DEDENT": ["ε"],
         "$":   ["ε"],
     },
 
@@ -283,6 +286,7 @@ PARSE_TABLE: Dict[str, Dict[str, List[str]]] = {
         "print":["ε"],
         "IDENTIFIER": ["ε"],
         "=":   ["ε"],
+        "DEDENT": ["ε"],
         "$":   ["ε"],
     },
 
@@ -332,8 +336,8 @@ class Parser:
         Returns:
             Terminal string for parse table lookup
         """
-        # IDENTIFIER, NUMBER, STRING, BOOLEAN are matched against token type
-        if token_type in ['IDENTIFIER', 'NUMBER', 'STRING', 'BOOLEAN']:
+        # IDENTIFIER, NUMBER, STRING, BOOLEAN, INDENT, DEDENT are matched against token type
+        if token_type in ['IDENTIFIER', 'NUMBER', 'STRING', 'BOOLEAN', 'INDENT', 'DEDENT']:
             return token_type
         
         # Keywords and operators are matched against lexeme (value)

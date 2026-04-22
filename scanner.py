@@ -17,7 +17,8 @@ EPSILON = "ε"
 TERMINALS = {
     "if", "else", "while", "print", "and",
     "=", ":", "(", ")", "+", "-", "<",
-    "IDENTIFIER", "NUMBER", "STRING", "BOOLEAN"
+    "IDENTIFIER", "NUMBER", "STRING", "BOOLEAN",
+    "INDENT", "DEDENT"
 }
 
 NON_TERMINALS = {
@@ -57,11 +58,54 @@ def scan(code):
     line = 1
     col = 1
     length = len(code)
+    
+    # Indentation tracking
+    indent_stack = [0]  # Stack of indentation levels (start with 0)
+    at_line_start = True  # True when at the beginning of a line
 
     while i < length:
         ch = code[i]
 
-        # Skip spaces/tabs/carriage returns
+        # Handle indentation at line start
+        if at_line_start:
+            # Count indentation (spaces and tabs)
+            indent_count = 0
+            while i < length and code[i] in " \t":
+                if code[i] == " ":
+                    indent_count += 1
+                elif code[i] == "\t":
+                    # Treat tab as 4 spaces (Python convention)
+                    indent_count = (indent_count // 4 + 1) * 4
+                i += 1
+                col += 1
+            
+            # Calculate indentation level
+            current_indent = indent_count
+            last_indent = indent_stack[-1]
+            
+            if current_indent > last_indent:
+                # Indentation increased - emit INDENT
+                indent_stack.append(current_indent)
+                tokens.append(("INDENT", "INDENT", line, 1))
+                at_line_start = False
+                continue
+            elif current_indent < last_indent:
+                # Indentation decreased - emit DEDENT tokens
+                while indent_stack and indent_stack[-1] > current_indent:
+                    indent_stack.pop()
+                    tokens.append(("DEDENT", "DEDENT", line, 1))
+                
+                # Check for indentation mismatch
+                if indent_stack[-1] != current_indent:
+                    errors.append(f"Indentation error at line {line}: inconsistent indentation level")
+                
+                at_line_start = False
+                continue
+            # else: same indentation level, no INDENT/DEDENT needed
+            
+            at_line_start = False
+        
+        # Skip spaces/tabs/carriage returns (not at line start)
         if ch in " \t\r":
             i += 1
             col += 1
@@ -72,6 +116,7 @@ def scan(code):
             i += 1
             line += 1
             col = 1
+            at_line_start = True
             continue
 
         start_line = line
@@ -164,6 +209,11 @@ def scan(code):
         i += 1
         col += 1
 
+    # Emit DEDENT tokens for any remaining indentation levels at end of file
+    while len(indent_stack) > 1:
+        indent_stack.pop()
+        tokens.append(("DEDENT", "DEDENT", line, col))
+
     return tokens, errors
 
 
@@ -205,7 +255,7 @@ def format_report(tokens, code, source_name, errors=None):
     out.append("  Type            Count")
     out.append("  ----------------------")
 
-    order = ["BOOLEAN", "DELIMITER", "IDENTIFIER", "KEYWORD", "NUMBER", "OPERATOR", "STRING"]
+    order = ["BOOLEAN", "DELIMITER", "IDENTIFIER", "KEYWORD", "NUMBER", "OPERATOR", "STRING", "INDENT", "DEDENT"]
     for token_type in order:
         if counts[token_type] > 0:
             out.append(f"  {token_type:<15} {counts[token_type]:>5}")
