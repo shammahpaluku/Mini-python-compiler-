@@ -3,6 +3,9 @@
 *.png
 *.svg
 
+# Scanner output
+lexer_output.txt
+
 # Python cache
 __pycache__/
 *.pyc
