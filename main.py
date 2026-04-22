@@ -41,6 +41,10 @@ def main():
         print("=" * 60)
         parser.print_parse_tree()
         print("\nParsing successful!")
+        
+        # Export parse tree to DOT format
+        dot_filename = filename.replace('.pymini', '.dot')
+        parser.export_parse_tree_dot(dot_filename)
     else:
         print("\nParsing failed.")
         sys.exit(1)

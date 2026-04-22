@@ -1,0 +1,7 @@
+# Generated parse tree DOT files
+*.dot
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
