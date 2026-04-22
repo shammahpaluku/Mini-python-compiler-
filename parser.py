@@ -43,6 +43,8 @@ class ParseTreeNode:
         """Export parse tree to Graphviz DOT format."""
         node_id = id(self)
         label = self.symbol if not self.token else f"{self.symbol}: {self.token}"
+        # Escape quotes in label for DOT format
+        label = label.replace('"', '\\"')
         file.write(f'{node_id} [label="{label}"];\n')
 
         for child in self.children:

@@ -1,5 +1,7 @@
 # Generated parse tree DOT files
 *.dot
+*.png
+*.svg
 
 # Python cache
 __pycache__/
