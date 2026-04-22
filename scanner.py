@@ -83,12 +83,15 @@ def scan(code):
             current_indent = indent_count
             last_indent = indent_stack[-1]
             
+            # DEBUG
+            # print(f"Line {line}: indent={current_indent}, last={last_indent}, ch at i={i}: '{code[i] if i < length else 'EOF'}'")
+            
             if current_indent > last_indent:
                 # Indentation increased - emit INDENT
                 indent_stack.append(current_indent)
                 tokens.append(("INDENT", "INDENT", line, 1))
                 at_line_start = False
-                continue
+                continue  # Skip to next character after indentation
             elif current_indent < last_indent:
                 # Indentation decreased - emit DEDENT tokens
                 while indent_stack and indent_stack[-1] > current_indent:
@@ -98,12 +101,17 @@ def scan(code):
                 # Check for indentation mismatch
                 if indent_stack[-1] != current_indent:
                     errors.append(f"Indentation error at line {line}: inconsistent indentation level")
-                
                 at_line_start = False
-                continue
-            # else: same indentation level, no INDENT/DEDENT needed
+                continue  # Skip to next character after indentation
             
+            # Same indentation level - no INDENT/DEDENT needed
             at_line_start = False
+            # Update ch to the character at current position after indentation
+            if i < length:
+                ch = code[i]
+            else:
+                break  # End of input
+            # Don't continue - let the loop process the current character (first non-whitespace)
         
         # Skip spaces/tabs/carriage returns (not at line start)
         if ch in " \t\r":
