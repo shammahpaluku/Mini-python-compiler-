@@ -16,14 +16,22 @@ class ParseTreeNode:
         self.children = children or []
         self.token = token          # actual token value for terminals e.g. "x", "5", "if"
     
+    @staticmethod
+    def clean_symbol(symbol):
+        """Remove angle brackets from non-terminal symbols."""
+        if symbol.startswith("<") and symbol.endswith(">"):
+            return symbol[1:-1]
+        return symbol
+    
     def print_tree(self, prefix="", is_last=True):
         """Print the parse tree with ASCII art connectors."""
         connector = "└── " if is_last else "├── "
         
+        cleaned_symbol = ParseTreeNode.clean_symbol(self.symbol)
         if self.token:
-            print(prefix + connector + f"{self.symbol}: {self.token}")
+            print(prefix + connector + f"{cleaned_symbol}: {self.token}")
         else:
-            print(prefix + connector + self.symbol)
+            print(prefix + connector + cleaned_symbol)
 
         new_prefix = prefix + ("    " if is_last else "│   ")
 
