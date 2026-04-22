@@ -23,15 +23,29 @@ class ParseTreeNode:
             return symbol[1:-1]
         return symbol
     
+    @staticmethod
+    def get_display_label(node):
+        """Generate proper display label distinguishing token types."""
+        # If node has a token value
+        if node.token is not None:
+            # Case 1: IDENTIFIER, NUMBER, STRING, BOOLEAN → show value only
+            if node.symbol in ["IDENTIFIER", "NUMBER", "STRING", "BOOLEAN"]:
+                return node.token
+            # Case 2: operators / punctuation / keywords → show symbol only
+            return node.symbol
+        
+        # Case 3: non-terminal → clean formatting
+        if node.symbol.startswith("<") and node.symbol.endswith(">"):
+            return node.symbol[1:-1]  # remove <>
+        
+        return node.symbol
+    
     def print_tree(self, prefix="", is_last=True):
         """Print the parse tree with ASCII art connectors."""
         connector = "└── " if is_last else "├── "
         
-        cleaned_symbol = ParseTreeNode.clean_symbol(self.symbol)
-        if self.token:
-            print(prefix + connector + f"{cleaned_symbol}: {self.token}")
-        else:
-            print(prefix + connector + cleaned_symbol)
+        label = ParseTreeNode.get_display_label(self)
+        print(prefix + connector + label)
 
         new_prefix = prefix + ("    " if is_last else "│   ")
 
@@ -42,7 +56,7 @@ class ParseTreeNode:
     def to_dot(self, file):
         """Export parse tree to Graphviz DOT format."""
         node_id = id(self)
-        label = self.symbol if not self.token else f"{self.symbol}: {self.token}"
+        label = ParseTreeNode.get_display_label(self)
         # Escape quotes in label for DOT format
         label = label.replace('"', '\\"')
         file.write(f'{node_id} [label="{label}"];\n')
@@ -58,8 +72,7 @@ class ParseTreeNode:
     
     def _print_horizontal_recursive(self, depth, prefix):
         """Recursively print tree in horizontal format."""
-        cleaned_symbol = ParseTreeNode.clean_symbol(self.symbol)
-        label = f"{cleaned_symbol}: {self.token}" if self.token else cleaned_symbol
+        label = ParseTreeNode.get_display_label(self)
         
         # Print this node
         print(prefix + label)
