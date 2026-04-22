@@ -1,18 +1,14 @@
-x = 5
-print(x)
-
-y = 10
-if x < y:
-    x = y
-
-a = 1
-b = 2
-c = a + b
-print(c)
-
+x=1
+y=3
 flag = True
-if flag:
-    result = "yes"
+msg = "Start"
+print(msg)
+if x < y and flag:
+    z=x+y
+    print(z)
 else:
-    result = "no"
-print(result)
+    z=y-x
+    print(z)
+while x < 3:
+    x=x+1
+    print(x)
