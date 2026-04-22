@@ -258,7 +258,6 @@ class Parser:
         self.parsing_steps = []  # For debugging/demonstration
         self.error_collector = ParseErrorCollector()  # Collect multiple errors
         self.parse_tree_root = None  # Root of the parse tree
-        self.node_stack = []  # Parallel stack for building parse tree
     
     def is_end(self) -> bool:
         """Check if all tokens are consumed (at EOF marker)."""
@@ -311,7 +310,7 @@ class Parser:
         """
         Parse token stream using table-driven LL(1) algorithm.
         Collects all errors instead of stopping at first one.
-        Builds parse tree during parsing.
+        Builds parse tree during parsing using (symbol, node) tuples on stack.
         
         Returns:
             True if parsing completed successfully, False otherwise
@@ -319,19 +318,18 @@ class Parser:
         Raises:
             ParseError: If critical parsing error occurs
         """
-        # Initialize parsing stack with [$, <program>] ($ at bottom, start symbol on top)
-        stack = ['$', START_SYMBOL]
-        
-        # Initialize parse tree and node stack
-        self.parse_tree_root = ParseTreeNode(START_SYMBOL)
-        self.node_stack = [ParseTreeNode('$'), self.parse_tree_root]
+        # Initialize parsing stack with [(symbol, node)] tuples
+        # $ at bottom, start symbol on top
+        root_node = ParseTreeNode(START_SYMBOL)
+        stack = [('$', ParseTreeNode('$')), (START_SYMBOL, root_node)]
+        self.parse_tree_root = root_node
         
         # Record initial state
         current_terminal = self._get_terminal_for_matching(self.current_token_type, self.current_lexeme)
         self._record_step(stack, current_terminal, "Initialize", None)
         
         while len(stack) > 1:
-            X = stack[-1]  # Top of stack
+            X, current_node = stack[-1]  # Top of stack: (symbol, node)
             t = self._get_terminal_for_matching(self.current_token_type, self.current_lexeme)  # Current input terminal
             
             # Case 1: X == t == $: parsing successful
@@ -342,11 +340,9 @@ class Parser:
             # Case 2: X is a terminal
             elif is_terminal(X):
                 if X == t:
-                    # Match: pop stack, advance input
+                    # Match: pop stack, advance input, attach token value to node
                     stack.pop()
-                    # Attach token value to leaf node
-                    leaf_node = self.node_stack.pop()
-                    leaf_node.token = self.current_lexeme
+                    current_node.token = self.current_lexeme
                     self._advance_input()
                     action = f"Match terminal '{X}'"
                 else:
@@ -386,20 +382,17 @@ class Parser:
                     stack.pop()
                     
                     # Build parse tree for this production
-                    current_node = self.node_stack.pop()
                     child_nodes = []
-                    
-                    # Push production symbols in reverse order
-                    for symbol in reversed(production):
+                    for symbol in production:
                         if symbol != 'ε':  # Skip epsilon
-                            stack.append(symbol)
-                            # Create child node and push to node stack
                             child_node = ParseTreeNode(symbol)
+                            current_node.children.append(child_node)
                             child_nodes.append(child_node)
-                            self.node_stack.append(child_node)
                     
-                    # Add child nodes to current node (in correct order)
-                    current_node.children = list(reversed(child_nodes))
+                    # Push (symbol, node) tuples in reverse order to preserve correct parsing order
+                    for symbol, child in reversed(list(zip(production, child_nodes))):
+                        if symbol != 'ε':  # Skip epsilon
+                            stack.append((symbol, child))
                     
                     action = f"Apply {X} -> {' '.join(production)}"
             
@@ -419,7 +412,7 @@ class Parser:
         if len(stack) > 1 and self.is_end():
             # Find the top non-terminal that was expected
             top_non_terminal = None
-            for symbol in reversed(stack):
+            for symbol, _ in reversed(stack):
                 if is_non_terminal(symbol):
                     top_non_terminal = symbol
                     break
@@ -454,18 +447,20 @@ class Parser:
         if self.current_token_index < len(self.tokens) - 1:
             self.current_token_index += 1
     
-    def _record_step(self, stack: List[str], token: str, action: str, production: Optional[List[str]]):
+    def _record_step(self, stack: List[tuple], token: str, action: str, production: Optional[List[str]]):
         """
         Record a parsing step for debugging/demonstration.
         
         Args:
-            stack: Current parsing stack
+            stack: Current parsing stack with (symbol, node) tuples
             token: Current input token
             action: Action taken
             production: Production applied (if any)
         """
+        # Extract symbols from tuples for display
+        stack_symbols = [symbol for symbol, _ in stack]
         step = {
-            'stack': stack.copy(),
+            'stack': stack_symbols,
             'token': token,
             'action': action,
             'production': production.copy() if production else None,
