@@ -521,8 +521,8 @@ class Parser:
             action: Action taken
             production: Production applied (if any)
         """
-        # Extract symbols from tuples for display
-        stack_symbols = [symbol for symbol, _ in stack]
+        # Extract symbols from tuples for display (top of stack on right)
+        stack_symbols = [symbol for symbol, _ in reversed(stack)]
         step = {
             'stack': stack_symbols,
             'token': token,
