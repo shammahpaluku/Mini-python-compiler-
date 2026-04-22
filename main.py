@@ -42,12 +42,9 @@ def main():
         parser.print_parse_tree()
         print("\nParsing successful!")
         
-        # Export parse tree to DOT format for proper horizontal visualization
+        # Export parse tree to DOT format
         dot_filename = filename.replace('.pymini', '.dot')
         parser.export_parse_tree_dot(dot_filename)
-        print(f"\nFor traditional horizontal tree format (E /|\ E + E), convert DOT to PNG:")
-        print(f"  dot -Tpng {dot_filename} -o {dot_filename.replace('.dot', '.png')}")
-        print(f"  xdg-open {dot_filename.replace('.dot', '.png')}")
     else:
         print("\nParsing failed.")
         sys.exit(1)
