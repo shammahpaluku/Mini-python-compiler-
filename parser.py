@@ -387,17 +387,23 @@ class Parser:
                     stack.pop()
                     
                     # Build parse tree for this production
-                    child_nodes = []
-                    for symbol in production:
-                        if symbol != 'ε':  # Skip epsilon
-                            child_node = ParseTreeNode(symbol)
-                            current_node.children.append(child_node)
-                            child_nodes.append(child_node)
-                    
-                    # Push (symbol, node) tuples in reverse order to preserve correct parsing order
-                    for symbol, child in reversed(list(zip(production, child_nodes))):
-                        if symbol != 'ε':  # Skip epsilon
-                            stack.append((symbol, child))
+                    if production == ['ε']:
+                        # Create epsilon node but don't push to stack
+                        epsilon_node = ParseTreeNode('ε')
+                        current_node.children.append(epsilon_node)
+                    else:
+                        # Normal production: create child nodes and push to stack
+                        child_nodes = []
+                        for symbol in production:
+                            if symbol != 'ε':  # Skip epsilon in normal productions
+                                child_node = ParseTreeNode(symbol)
+                                current_node.children.append(child_node)
+                                child_nodes.append(child_node)
+                        
+                        # Push (symbol, node) tuples in reverse order to preserve correct parsing order
+                        for symbol, child in reversed(list(zip(production, child_nodes))):
+                            if symbol != 'ε':  # Skip epsilon
+                                stack.append((symbol, child))
                     
                     action = f"Apply {X} -> {' '.join(production)}"
             
