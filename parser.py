@@ -38,6 +38,17 @@ class ParseTreeNode:
         for i, child in enumerate(self.children):
             is_last_child = (i == len(self.children) - 1)
             child.print_tree(new_prefix, is_last_child)
+    
+    def to_dot(self, file):
+        """Export parse tree to Graphviz DOT format."""
+        node_id = id(self)
+        label = self.symbol if not self.token else f"{self.symbol}: {self.token}"
+        file.write(f'{node_id} [label="{label}"];\n')
+
+        for child in self.children:
+            child_id = id(child)
+            file.write(f"{node_id} -> {child_id};\n")
+            child.to_dot(file)
 
 # Error handling classes
 class ParseError(Exception):
@@ -540,6 +551,18 @@ class Parser:
             self.parse_tree_root.print_tree()
         else:
             print("No parse tree available")
+    
+    def export_parse_tree_dot(self, filename):
+        """Export parse tree to Graphviz DOT format file."""
+        if not self.parse_tree_root:
+            print("No parse tree available to export")
+            return
+        
+        with open(filename, 'w') as f:
+            f.write("digraph ParseTree {\n")
+            self.parse_tree_root.to_dot(f)
+            f.write("}\n")
+        print(f"Parse tree exported to {filename}")
 
 
 # Utility functions for creating parser
