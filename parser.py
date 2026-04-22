@@ -6,7 +6,25 @@ Uses hardcoded parse table to perform syntactic analysis.
 """
 
 from typing import List, Tuple, Optional, Dict
-from scanner import scan, START_SYMBOL, is_terminal, is_non_terminal
+from scanner import scan, is_terminal, is_non_terminal
+
+class ParseTreeNode:
+    """Node in the parse tree representing a grammar symbol or terminal."""
+    
+    def __init__(self, symbol, children=None, token=None):
+        self.symbol = symbol        # grammar symbol e.g. "<statement>" or "IDENTIFIER"
+        self.children = children or []
+        self.token = token          # actual token value for terminals e.g. "x", "5", "if"
+    
+    def pretty_print(self, indent=0):
+        """Print the parse tree with proper indentation."""
+        prefix = "  " * indent
+        if self.token:
+            print(f"{prefix}{self.symbol}: {self.token}")
+        else:
+            print(f"{prefix}{self.symbol}")
+        for child in self.children:
+            child.pretty_print(indent + 1)
 
 # Error handling classes
 class ParseError(Exception):
@@ -89,6 +107,7 @@ class ParseErrorCollector:
         print("-" * 60)
 
 # Manually defined parse table - do not auto-generate
+START_SYMBOL = "<program>"
 PARSE_TABLE: Dict[str, Dict[str, List[str]]] = {
     "<program>": {
         "if":         ["<statement_list>"],
@@ -238,6 +257,8 @@ class Parser:
         self.parse_table = PARSE_TABLE
         self.parsing_steps = []  # For debugging/demonstration
         self.error_collector = ParseErrorCollector()  # Collect multiple errors
+        self.parse_tree_root = None  # Root of the parse tree
+        self.node_stack = []  # Parallel stack for building parse tree
     
     def is_end(self) -> bool:
         """Check if all tokens are consumed (at EOF marker)."""
@@ -290,7 +311,7 @@ class Parser:
         """
         Parse token stream using table-driven LL(1) algorithm.
         Collects all errors instead of stopping at first one.
-        Only performs stack-based parsing, no AST construction.
+        Builds parse tree during parsing.
         
         Returns:
             True if parsing completed successfully, False otherwise
@@ -300,6 +321,10 @@ class Parser:
         """
         # Initialize parsing stack with [$, <program>] ($ at bottom, start symbol on top)
         stack = ['$', START_SYMBOL]
+        
+        # Initialize parse tree and node stack
+        self.parse_tree_root = ParseTreeNode(START_SYMBOL)
+        self.node_stack = [ParseTreeNode('$'), self.parse_tree_root]
         
         # Record initial state
         current_terminal = self._get_terminal_for_matching(self.current_token_type, self.current_lexeme)
@@ -319,6 +344,9 @@ class Parser:
                 if X == t:
                     # Match: pop stack, advance input
                     stack.pop()
+                    # Attach token value to leaf node
+                    leaf_node = self.node_stack.pop()
+                    leaf_node.token = self.current_lexeme
                     self._advance_input()
                     action = f"Match terminal '{X}'"
                 else:
@@ -357,10 +385,21 @@ class Parser:
                     # Found production: pop X, push production symbols in REVERSE order
                     stack.pop()
                     
+                    # Build parse tree for this production
+                    current_node = self.node_stack.pop()
+                    child_nodes = []
+                    
                     # Push production symbols in reverse order
                     for symbol in reversed(production):
                         if symbol != 'ε':  # Skip epsilon
                             stack.append(symbol)
+                            # Create child node and push to node stack
+                            child_node = ParseTreeNode(symbol)
+                            child_nodes.append(child_node)
+                            self.node_stack.append(child_node)
+                    
+                    # Add child nodes to current node (in correct order)
+                    current_node.children = list(reversed(child_nodes))
                     
                     action = f"Apply {X} -> {' '.join(production)}"
             
@@ -481,6 +520,13 @@ class Parser:
         print(f"Terminal matches: {matches}")
         print(f"Production applications: {productions}")
         print(f"Error recoveries: {errors}")
+    
+    def print_parse_tree(self):
+        """Print the parse tree if parsing was successful."""
+        if self.parse_tree_root:
+            self.parse_tree_root.pretty_print()
+        else:
+            print("No parse tree available (parsing failed or not completed)")
 
 
 # Utility functions for creating parser
@@ -544,47 +590,3 @@ def parse_string(source_code: str) -> bool:
     return parser.parse()
 
 
-if __name__ == "__main__":
-    # Handle command line arguments
-    import sys
-    
-    if len(sys.argv) > 1:
-        # Read from file
-        filename = sys.argv[1]
-        try:
-            with open(filename, 'r', encoding='utf-8') as f:
-                code = f.read()
-        except FileNotFoundError:
-            print(f"Error: file not found - {filename}")
-            sys.exit(1)
-    else:
-        # Use simple test code
-        code = """x = 5
-print(x)"""
-    
-    try:
-        print(f"Testing LL(1) parser with hardcoded parse table...")
-        if len(sys.argv) > 1:
-            print(f"Source file: {filename}")
-        print(f"Source code ({len(code)} characters):")
-        print("-" * 40)
-        print(code)
-        print("-" * 40)
-        
-        parser = create_parser(code)
-        success = parser.parse()
-        
-        if success:
-            print("✅ Parsing successful!")
-        else:
-            print("❌ Parsing failed with errors.")
-        
-        parser.print_steps()
-        parser.print_parse_summary()
-        
-    except ParseError as e:
-        print(f"Critical parse error: {e}")
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-        import traceback
-        traceback.print_exc()
