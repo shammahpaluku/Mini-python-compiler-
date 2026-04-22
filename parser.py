@@ -445,9 +445,8 @@ class Parser:
                     
                     # Build parse tree for this production
                     if production == ['ε']:
-                        # Create epsilon node but don't push to stack
-                        epsilon_node = ParseTreeNode('ε')
-                        current_node.children.append(epsilon_node)
+                        # Epsilon production - don't create any children (empty production)
+                        pass
                     else:
                         # Normal production: create child nodes and push to stack
                         child_nodes = []
