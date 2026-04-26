@@ -31,25 +31,19 @@ NON_TERMINALS = {
 }
 
 def is_terminal(symbol: str) -> bool:
-    """Check if symbol is a terminal."""
     return symbol in TERMINALS
 
 def is_non_terminal(symbol: str) -> bool:
-    """Check if symbol is a non-terminal."""
     return symbol in NON_TERMINALS
-
 
 def is_letter(ch):
     return ch.isalpha() or ch == "_"
 
-
 def is_digit(ch):
     return ch.isdigit()
 
-
 def is_alnum_or_underscore(ch):
     return ch.isalnum() or ch == "_"
-
 
 def scan(code):
     tokens = []
@@ -59,67 +53,53 @@ def scan(code):
     col = 1
     length = len(code)
     
-    # Indentation tracking
-    indent_stack = [0]  # Stack of indentation levels (start with 0)
-    at_line_start = True  # True when at the beginning of a line
+    indent_stack = [0]
+    at_line_start = True
 
     while i < length:
         ch = code[i]
 
-        # Handle indentation at line start
         if at_line_start:
-            # Count indentation (spaces and tabs)
             indent_count = 0
             while i < length and code[i] in " \t":
                 if code[i] == " ":
                     indent_count += 1
                 elif code[i] == "\t":
-                    # Treat tab as 4 spaces (Python convention)
                     indent_count = (indent_count // 4 + 1) * 4
                 i += 1
                 col += 1
             
-            # Calculate indentation level
             current_indent = indent_count
             last_indent = indent_stack[-1]
             
-            # DEBUG
-            # print(f"Line {line}: indent={current_indent}, last={last_indent}, ch at i={i}: '{code[i] if i < length else 'EOF'}'")
-            
             if current_indent > last_indent:
-                # Indentation increased - emit INDENT
                 indent_stack.append(current_indent)
                 tokens.append(("INDENT", "INDENT", line, 1))
                 at_line_start = False
-                continue  # Skip to next character after indentation
+                continue
             elif current_indent < last_indent:
-                # Indentation decreased - emit DEDENT tokens
                 while indent_stack and indent_stack[-1] > current_indent:
                     indent_stack.pop()
                     tokens.append(("DEDENT", "DEDENT", line, 1))
                 
-                # Check for indentation mismatch
                 if indent_stack[-1] != current_indent:
                     errors.append(f"Indentation error at line {line}: inconsistent indentation level")
+                    # Layer 1: Fast-Failing on Indentation
+                    return tokens, errors
                 at_line_start = False
-                continue  # Skip to next character after indentation
+                continue
             
-            # Same indentation level - no INDENT/DEDENT needed
             at_line_start = False
-            # Update ch to the character at current position after indentation
             if i < length:
                 ch = code[i]
             else:
-                break  # End of input
-            # Don't continue - let the loop process the current character (first non-whitespace)
+                break
         
-        # Skip spaces/tabs/carriage returns (not at line start)
         if ch in " \t\r":
             i += 1
             col += 1
             continue
 
-        # Newline
         if ch == "\n":
             i += 1
             line += 1
@@ -130,7 +110,6 @@ def scan(code):
         start_line = line
         start_col = col
 
-        # IDENTIFIER / KEYWORD / BOOLEAN / word-operator
         if is_letter(ch):
             lexeme = ch
             i += 1
@@ -153,7 +132,6 @@ def scan(code):
             tokens.append((token_type, lexeme, start_line, start_col))
             continue
 
-        # NUMBER
         if is_digit(ch):
             lexeme = ch
             i += 1
@@ -167,7 +145,6 @@ def scan(code):
             tokens.append(("NUMBER", lexeme, start_line, start_col))
             continue
 
-        # STRING
         if ch == '"':
             lexeme = ch
             i += 1
@@ -178,7 +155,6 @@ def scan(code):
             while i < length and code[i] != '"':
                 if code[i] == "\n":
                     errors.append(f"Unterminated string starting at line {string_start_line}, column {string_start_col}")
-                    # Skip to next line to continue scanning
                     i += 1
                     line += 1
                     col = 1
@@ -192,38 +168,33 @@ def scan(code):
                 break
 
             if i < length and code[i] == '"':
-                lexeme += code[i]  # closing quote
+                lexeme += code[i]
                 i += 1
                 col += 1
                 tokens.append(("STRING", lexeme, start_line, start_col))
             continue
 
-        # Symbol operators
         if ch in SYMBOL_OPERATORS:
             tokens.append(("OPERATOR", ch, start_line, start_col))
             i += 1
             col += 1
             continue
 
-        # Delimiters
         if ch in DELIMITERS:
             tokens.append(("DELIMITER", ch, start_line, start_col))
             i += 1
             col += 1
             continue
 
-        # Unknown character - record error and continue
         errors.append(f"Unexpected character '{ch}' at line {line}, column {col}")
         i += 1
         col += 1
 
-    # Emit DEDENT tokens for any remaining indentation levels at end of file
     while len(indent_stack) > 1:
         indent_stack.pop()
         tokens.append(("DEDENT", "DEDENT", line, col))
 
     return tokens, errors
-
 
 def format_report(tokens, code, source_name, errors=None):
     counts = Counter(token_type for token_type, _, _, _ in tokens)
@@ -280,14 +251,12 @@ def format_report(tokens, code, source_name, errors=None):
 
     return "\n".join(out)
 
-
 def write_output(report):
     with open(OUTPUT_FILE, "a", encoding="utf-8") as f:
         f.write("=====\n")
         f.write(f"Run at: {datetime.now()}\n")
         f.write(report)
         f.write("\n\n")
-
 
 def read_input():
     if len(sys.argv) > 1:
@@ -297,7 +266,6 @@ def read_input():
     else:
         print("Enter source code. Press Ctrl+D (Linux/Mac) or Ctrl+Z then Enter (Windows) to finish:\n")
         return sys.stdin.read(), "<terminal input>"
-
 
 def main():
     try:
@@ -314,7 +282,6 @@ def main():
         print(f"Error: file not found - {e}")
     except Exception as e:
         print(f"Unexpected error: {e}")
-
 
 if __name__ == "__main__":
     main()
