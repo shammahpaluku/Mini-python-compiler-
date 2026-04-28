@@ -39,7 +39,7 @@ def main():
         # Combine stdout and stderr
         output = result.stdout + result.stderr
         
-        # Optional: We filter out the massive "PARSING STEPS" table to keep the console readable,
+        # We filter out the massive "PARSING STEPS" table to keep the console readable,
         # focusing only on the Source Code, Tokens, and Error Summaries.
         printing_enabled = True
         for line in output.split('\n'):
@@ -52,7 +52,7 @@ def main():
             if printing_enabled:
                 print(line)
 
-    # 4. Clean up the generated test files so they don't clutter your directory
+    # 4. Clean up the generated test files - declutter directory
     print(f"\n{'='*60}")
     print(" Cleaning up test files...")
     for filename in test_cases.keys():
