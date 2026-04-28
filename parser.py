@@ -426,9 +426,13 @@ class Parser:
         print("-" * 100)
         
         for i, step in enumerate(self.parsing_steps):
-            stack_str = " ".join(step['stack'])
-            if len(stack_str) > 38:
-                stack_str = stack_str[:38]
+            stack = step['stack']
+            # Show top of stack (right side) without cutting off in middle of symbols
+            if len(stack) > 5:
+                # Show last 5 symbols (top of stack)
+                stack_str = "... " + " ".join(stack[-5:])
+            else:
+                stack_str = " ".join(stack)
             
             action = step['action']
             if step['production']:
