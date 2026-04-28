@@ -19,14 +19,19 @@ def main():
     print("=" * 60)
     print("TOKEN LIST (Scanner Output)")
     print("=" * 60)
+    
     tokens, errors = scan(source)
-    if errors:
-        print("Lexical errors:")
-        for e in errors:
-            print(f"  {e}")
-        sys.exit(1)
+    
+    # Print the tokens FIRST so lexical errors are visible in the stream
     for token in tokens:
         print(token)
+        
+    if errors:
+        print("\nLexical errors found:")
+        for e in errors:
+            print(f"  {e}")
+        # Exit AFTER printing tokens
+        sys.exit(1)
     
     print("=" * 60)
     print("PARSING")

@@ -18,7 +18,7 @@ TERMINALS = {
     "if", "else", "while", "print", "and",
     "=", ":", "(", ")", "+", "-", "<",
     "IDENTIFIER", "NUMBER", "STRING", "BOOLEAN",
-    "INDENT", "DEDENT"
+    "INDENT", "DEDENT", "LEXICAL ERROR"
 }
 
 NON_TERMINALS = {
@@ -60,19 +60,35 @@ def scan(code):
         ch = code[i]
 
         if at_line_start:
-            indent_count = 0
+            space_count = 0
+            
+            # Count leading whitespace, combining spaces and tabs
             while i < length and code[i] in " \t":
                 if code[i] == " ":
-                    indent_count += 1
+                    space_count += 1
                 elif code[i] == "\t":
-                    indent_count = (indent_count // 4 + 1) * 4
+                    # Tab snaps to the next multiple of 4
+                    space_count = (space_count // 4 + 1) * 4
                 i += 1
                 col += 1
             
-            current_indent = indent_count
+            # Enforce the strict "4 Rule" (must be a multiple of 4 spaces)
+            if space_count % 4 != 0:
+                err_msg = f"Lexical error at line {line}: Indentation must be a multiple of 4 spaces or 1 tab. Found equivalent of {space_count} spaces."
+                errors.append(err_msg)
+                tokens.append(("LEXICAL ERROR", " " * space_count, line, 1))
+                
+            # Translate space count into an abstract "indent level" (e.g., 4 spaces = level 1, 8 = level 2)
+            current_indent = space_count // 4
             last_indent = indent_stack[-1]
             
             if current_indent > last_indent:
+                # Enforce strict +1 level increments
+                if current_indent != last_indent + 1:
+                    err_msg = f"Lexical error at line {line}: Over-indented. Expected {last_indent + 1} indent level(s), found {current_indent}."
+                    errors.append(err_msg)
+                    tokens.append(("LEXICAL ERROR", " " * space_count, line, 1))
+                
                 indent_stack.append(current_indent)
                 tokens.append(("INDENT", "INDENT", line, 1))
                 at_line_start = False
@@ -83,9 +99,10 @@ def scan(code):
                     tokens.append(("DEDENT", "DEDENT", line, 1))
                 
                 if indent_stack[-1] != current_indent:
-                    errors.append(f"Indentation error at line {line}: inconsistent indentation level")
-                    # Layer 1: Fast-Failing on Indentation
-                    return tokens, errors
+                    err_msg = f"Lexical error at line {line}: Inconsistent dedent level."
+                    errors.append(err_msg)
+                    tokens.append(("LEXICAL ERROR", " " * space_count, line, 1))
+                    
                 at_line_start = False
                 continue
             
@@ -155,6 +172,7 @@ def scan(code):
             while i < length and code[i] != '"':
                 if code[i] == "\n":
                     errors.append(f"Unterminated string starting at line {string_start_line}, column {string_start_col}")
+                    tokens.append(("LEXICAL ERROR", lexeme, string_start_line, string_start_col))
                     i += 1
                     line += 1
                     col = 1
@@ -165,6 +183,7 @@ def scan(code):
 
             if i >= length and code[i-1] != '"':
                 errors.append(f"Unterminated string starting at line {string_start_line}, column {string_start_col}")
+                tokens.append(("LEXICAL ERROR", lexeme, string_start_line, string_start_col))
                 break
 
             if i < length and code[i] == '"':
@@ -186,7 +205,9 @@ def scan(code):
             col += 1
             continue
 
+        # Add the lexical error directly to the token stream
         errors.append(f"Unexpected character '{ch}' at line {line}, column {col}")
+        tokens.append(("LEXICAL ERROR", ch, line, col))
         i += 1
         col += 1
 
@@ -234,7 +255,7 @@ def format_report(tokens, code, source_name, errors=None):
     out.append("  Type            Count")
     out.append("  ----------------------")
 
-    order = ["BOOLEAN", "DELIMITER", "IDENTIFIER", "KEYWORD", "NUMBER", "OPERATOR", "STRING", "INDENT", "DEDENT"]
+    order = ["BOOLEAN", "DELIMITER", "IDENTIFIER", "KEYWORD", "NUMBER", "OPERATOR", "STRING", "INDENT", "DEDENT", "LEXICAL ERROR"]
     for token_type in order:
         if counts[token_type] > 0:
             out.append(f"  {token_type:<15} {counts[token_type]:>5}")
