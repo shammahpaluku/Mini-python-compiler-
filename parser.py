@@ -422,6 +422,9 @@ class Parser:
         print("PARSING STEPS")
         print("="*120)
         
+        print(f"{'Step':<6} | {'Stack'} | {'Input Token':<20} | {'Action'}")
+        print("-" * 120)
+        
         for i, step in enumerate(self.parsing_steps):
             stack_str = " ".join(step['stack'])
             action = step['action']
@@ -429,11 +432,7 @@ class Parser:
                 prod_str = " ".join(step['production'])
                 action += f" ({prod_str})"
             
-            print(f"Step {i}:")
-            print(f"  Stack: {stack_str}")
-            print(f"  Input Token: {step['token']}")
-            print(f"  Action: {action}")
-            print()
+            print(f"{i:<6} | {stack_str} | {step['token']:<20} | {action}")
         
         print("="*120)
     
