@@ -422,32 +422,18 @@ class Parser:
         print("PARSING STEPS")
         print("="*120)
         
-        print(f"{'Step':<6} {'Stack':<50} {'Input Token':<20} {'Action':<44}")
-        print("-" * 120)
-        
         for i, step in enumerate(self.parsing_steps):
-            stack = step['stack']
-            # Show top of stack (right side) without cutting off in middle of symbols
-            if len(stack) > 5:
-                # Show last 5 symbols (top of stack) to fit in column
-                stack_str = "... " + " ".join(stack[-5:])
-            else:
-                stack_str = " ".join(stack)
-            
-            # Truncate if still too long
-            if len(stack_str) > 47:
-                stack_str = stack_str[:47]
-            
+            stack_str = " ".join(step['stack'])
             action = step['action']
             if step['production']:
                 prod_str = " ".join(step['production'])
                 action += f" ({prod_str})"
             
-            # Truncate action if too long
-            if len(action) > 41:
-                action = action[:41]
-            
-            print(f"{i:<6} {stack_str:<50} {step['token']:<20} {action:<44}")
+            print(f"Step {i}:")
+            print(f"  Stack: {stack_str}")
+            print(f"  Input Token: {step['token']}")
+            print(f"  Action: {action}")
+            print()
         
         print("="*120)
     
