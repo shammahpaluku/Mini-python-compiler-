@@ -7,6 +7,35 @@ Uses hardcoded parse table to perform syntactic analysis.
 
 from typing import List, Tuple, Optional, Dict
 from scanner import scan, is_terminal, is_non_terminal
+#Error Message Translation Dictionaries
+NON_TERMINAL_TRANSLATIONS = {
+    "<program>": "a valid program start",
+    "<statement_list>": "a statement (like assignment, if, while, print) or end of block",
+    "<statement>": "a statement",
+    "<assignment>": "an assignment expression",
+    "<if_statement>": "an 'if' statement",
+    "<else_clause>": "an 'else' clause or end of if-block",
+    "<while_statement>": "a 'while' statement",
+    "<print_statement>": "a 'print' statement",
+    "<expression>": "an expression (variable, number, string, boolean)",
+    "<logical_expression>": "a logical expression",
+    "<logical_tail>": "an 'and' operator or end of condition",
+    "<comparison_expression>": "a comparison expression",
+    "<comparison_tail>": "a comparison operator ('<') or end of expression",
+    "<arithmetic_expression>": "an arithmetic expression",
+    "<arithmetic_tail>": "an arithmetic operator ('+', '-') or end of expression",
+    "<term>": "a value (variable, number, string, or boolean)"
+}
+
+TERMINAL_TRANSLATIONS = {
+    "IDENTIFIER": "variable name",
+    "NUMBER": "number",
+    "STRING": "string",
+    "BOOLEAN": "boolean",
+    "INDENT": "indentation",
+    "DEDENT": "dedentation",
+    "$": "end of file"
+}
 
 class ParseTreeNode:
     def __init__(self, symbol, children=None, token=None):
@@ -78,17 +107,35 @@ class ParseError(Exception):
 
 class UnexpectedTokenError(ParseError):
     def __init__(self, token: str, line: int, column: int, lexeme: str, expected_terminal: str):
-        message = f"Unexpected token '{token}', expected '{expected_terminal}'"
+        expected_str = TERMINAL_TRANSLATIONS.get(expected_terminal, f"'{expected_terminal}'")
+        found_str = TERMINAL_TRANSLATIONS.get(token, f"'{lexeme}'") if token in TERMINAL_TRANSLATIONS else f"'{lexeme}'"
+        
+        message = f"Invalid syntax: Expected {expected_str} but found {found_str}"
         super().__init__(message, line, column, lexeme)
         self.token = token
         self.expected_terminal = expected_terminal
 
 class NoProductionError(ParseError):
-    def __init__(self, non_terminal: str, terminal: str, line: int, column: int, lexeme: str):
-        message = f"No production found for <<{non_terminal}>> with token '{terminal}'"
+    def __init__(self, non_terminal: str, terminal: str, line: int, column: int, lexeme: str, expected_terminals: List[str] = None):
+        # Translate the CFG non-terminal into human-intent
+        expected_intent = NON_TERMINAL_TRANSLATIONS.get(non_terminal, non_terminal)
+        found_str = TERMINAL_TRANSLATIONS.get(terminal, f"'{lexeme}'") if terminal in TERMINAL_TRANSLATIONS else f"'{lexeme}'"
+        
+        message = f"Invalid syntax: Expected {expected_intent} but found {found_str}"
         super().__init__(message, line, column, lexeme)
         self.non_terminal = non_terminal
         self.terminal = terminal
+        
+        # Format the list of actual expected tokens
+        self.expected_list_str = ""
+        if expected_terminals:
+            translated_terms = [TERMINAL_TRANSLATIONS.get(t, f"'{t}'") for t in expected_terminals]
+            if len(translated_terms) == 1:
+                self.expected_list_str = translated_terms[0]
+            elif len(translated_terms) == 2:
+                self.expected_list_str = f"{translated_terms[0]} or {translated_terms[1]}"
+            else:
+                self.expected_list_str = ", ".join(translated_terms[:-1]) + f", or {translated_terms[-1]}"
 
 class UnexpectedEndOfInputError(ParseError):
     def __init__(self, expected_non_terminal: str = None):
@@ -118,11 +165,12 @@ class ParseErrorCollector:
         
         for i, error in enumerate(self.errors, 1):
             print(f"Error {i}:")
-            if isinstance(error, (UnexpectedTokenError, NoProductionError)):
+            if isinstance(error, NoProductionError):
                 print(f"  {error}")
-                print(f"  Expected: expansion of <<{error.non_terminal if hasattr(error, 'non_terminal') else error.expected_terminal}>>")
-                print(f"  Found: {error.token if hasattr(error, 'token') else error.lexeme} '{error.lexeme if hasattr(error, 'lexeme') else ''}'")
+                if hasattr(error, 'expected_list_str') and error.expected_list_str:
+                    print(f"  Valid tokens here include: {error.expected_list_str}")
             else:
+                # Handles UnexpectedTokenError and generic ParseErrors natively
                 print(f"  {error}")
             print()
         
@@ -353,9 +401,13 @@ class Parser:
                 production = self._get_table_entry(X, t)
                 
                 if production == ['error']:
+                    # --- NEW: Fetch expected terminal ---
+                    expected_terminals = list(self.parse_table.get(X, {}).keys())
+                    
                     error = NoProductionError(
                         non_terminal=X, terminal=t, line=self.current_line,
-                        column=self.current_column, lexeme=self.current_lexeme
+                        column=self.current_column, lexeme=self.current_lexeme,
+                        expected_terminals=expected_terminals # Passed in here!
                     )
                     self.error_collector.add_error(error)
                     # Layer 2: Panic-Mode Recovery
