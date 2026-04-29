@@ -318,6 +318,8 @@ class Parser:
         self.parsing_steps = []
         self.error_collector = ParseErrorCollector()
         self.parse_tree_root = None
+        self.last_real_line = 1
+        self.last_real_col = 1
     
     def is_end(self) -> bool:
         return self.current_token_index >= len(self.tokens) - 1
@@ -346,6 +348,18 @@ class Parser:
     @property
     def current_column(self) -> int:
         return self.current_token[3]
+
+    @property
+    def error_line(self) -> int:
+        if self.current_token[0] == '$':
+            return self.last_real_line
+        return self.current_line
+
+    @property
+    def error_col(self) -> int:
+        if self.current_token[0] == '$':
+            return self.last_real_col
+        return self.current_column
     
     def _perform_panic_recovery(self, stack):
         sync_terminals = {"if", "while", "print", "IDENTIFIER", "DEDENT", "$"}
@@ -371,7 +385,7 @@ class Parser:
         while len(stack) > 1:
             # Layer 1: Error Thresholding
             if len(self.error_collector.errors) >= 3:
-                self.error_collector.add_error(ParseError("Error threshold reached. Aborting parsing.", self.current_line, self.current_column))
+                self.error_collector.add_error(ParseError("Error threshold reached. Aborting parsing.", self.error_line, self.error_col))
                 break
 
             X, current_node = stack[-1]
@@ -389,14 +403,14 @@ class Parser:
                     action = f"Match terminal '{X}'"
                 # Layer 3: Phrase-Level Insertion
                 elif X == ":" and t == "INDENT":
-                    error = ParseError("Missing expected ':' before indented block", self.current_line, self.current_column)
+                    error = ParseError("Missing expected ':' before indented block", self.error_line, self.error_col)
                     self.error_collector.add_error(error)
                     stack.pop()
                     current_node.token = ":"
                     action = "Error recovery: inserted missing ':'"
                 else:
                     error = UnexpectedTokenError(
-                        token=t, line=self.current_line, column=self.current_column,
+                        token=t, line=self.error_line, column=self.error_col,
                         lexeme=self.current_lexeme, expected_terminal=X
                     )
                     self.error_collector.add_error(error)
@@ -412,8 +426,8 @@ class Parser:
                     expected_terminals = list(self.parse_table.get(X, {}).keys())
                     
                     error = NoProductionError(
-                        non_terminal=X, terminal=t, line=self.current_line,
-                        column=self.current_column, lexeme=self.current_lexeme,
+                        non_terminal=X, terminal=t, line=self.error_line,
+                        column=self.error_col, lexeme=self.current_lexeme,
                         expected_terminals=expected_terminals # Passed in here!
                     )
                     self.error_collector.add_error(error)
@@ -437,7 +451,7 @@ class Parser:
                     action = f"Apply {X} -> {' '.join(production)}"
             
             else:
-                error = ParseError(f"Invalid symbol on stack: '{X}'", self.current_line, self.current_column)
+                error = ParseError(f"Invalid symbol on stack: '{X}'", self.error_line, self.error_col)
                 self.error_collector.add_error(error)
                 break
             
@@ -463,6 +477,10 @@ class Parser:
     
     def _advance_input(self):
         if self.current_token_index < len(self.tokens) - 1:
+            tok = self.tokens[self.current_token_index]
+            if tok[0] != '$':
+                self.last_real_line = tok[2]
+                self.last_real_col = tok[3]
             self.current_token_index += 1
     
     def _record_step(self, stack: List[tuple], token: str, action: str, production: Optional[List[str]]):
