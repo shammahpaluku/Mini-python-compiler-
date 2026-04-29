@@ -115,6 +115,13 @@ class UnexpectedTokenError(ParseError):
         self.token = token
         self.expected_terminal = expected_terminal
 
+    def __str__(self):
+        return (
+            f"[SYNTAX ERROR] Line {self.line}, Col {self.column}: "
+            f"Expected '{self.expected_terminal}' but found "
+            f"{self.token} '{self.lexeme}'"
+        )
+
 class NoProductionError(ParseError):
     def __init__(self, non_terminal: str, terminal: str, line: int, column: int, lexeme: str, expected_terminals: List[str] = None):
         # Translate the CFG non-terminal into human-intent
