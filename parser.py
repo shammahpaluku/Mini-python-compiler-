@@ -196,6 +196,7 @@ PARSE_TABLE: Dict[str, Dict[str, List[str]]] = {
         "while":      ["<statement_list>"],
         "print":      ["<statement_list>"],
         "IDENTIFIER": ["<statement_list>"],
+        "$":          ["<statement_list>"],
     },
     "<statement_list>": {
         "if":         ["<statement>", "<statement_list>"],
