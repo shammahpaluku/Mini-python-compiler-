@@ -38,10 +38,12 @@ TERMINAL_TRANSLATIONS = {
 }
 
 class ParseTreeNode:
-    def __init__(self, symbol, children=None, token=None):
-        self.symbol = symbol
+    def __init__(self, symbol, children=None, token=None, line=0, column=0):
+        self.symbol = symbol        
         self.children = children or []
-        self.token = token
+        self.token = token          
+        self.line = line
+        self.column = column
     
     @staticmethod
     def clean_symbol(symbol):
@@ -396,12 +398,16 @@ class Parser:
                 self._record_step(stack, t, "Accept", None)
                 break
             
+            # Case 2: X is a terminal
             elif is_terminal(X):
                 if X == t:
+                    # Match: pop stack, advance input, attach token value to node
                     stack.pop()
                     current_node.token = self.current_lexeme
+                    current_node.line = self.current_line       # NEW
+                    current_node.column = self.current_column   # NEW
                     self._advance_input()
-                    action = f"Match terminal '{X}'"
+
                 # Layer 3: Phrase-Level Insertion
                 elif X == ":" and t == "INDENT":
                     error = ParseError("Missing expected ':' before indented block", self.error_line, self.error_col)
